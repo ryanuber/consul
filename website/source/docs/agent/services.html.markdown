@@ -26,10 +26,12 @@ A service definition that is a script looks like:
     "tags": ["master"],
     "address": "127.0.0.1",
     "port": 8000,
-    "check": {
-      "script": "/usr/local/bin/check_redis.py",
-      "interval": "10s"
-    }
+    "checks": [
+      {
+        "script": "/usr/local/bin/check_redis.py",
+        "interval": "10s"
+      }
+    ]
   }
 }
 ```
@@ -57,7 +59,10 @@ node from any service query.
 There is more information about [checks here](/docs/agent/checks.html). The
 check must be of the script or TTL type. If it is a script type, `script` and
 `interval` must be provided. If it is a TTL type, then only `ttl` must be
-provided. The check name is automatically generated as "service:<service-id>".
+provided. The check name is automatically generated as
+`service:<service-id>`. If there are multiple service checks registered, the
+ID will be generated as `service:<service-id>:<num>`, where `<num>` is an
+incrementing number starting from `1`.
 
 To configure a service, either provide it as a `-config-file` option to the
 agent, or place it inside the `-config-dir` of the agent. The file must
@@ -81,11 +86,13 @@ Multiple services definitions can be provided at once using the `services`
       ],
       "address": "127.0.0.1",
       "port": 6000,
-      "check": {
-        "script": "/bin/check_redis -p 6000",
-        "interval": "5s",
-        "ttl": "20s"
-      }
+      "checks": [
+        {
+          "script": "/bin/check_redis -p 6000",
+          "interval": "5s",
+          "ttl": "20s"
+        }
+      ]
     },
     {
       "id": "red1",
@@ -96,11 +103,13 @@ Multiple services definitions can be provided at once using the `services`
       ],
       "address": "127.0.0.1",
       "port": 7000,
-      "check": {
-        "script": "/bin/check_redis -p 7000",
-        "interval": "30s",
-        "ttl": "60s"
-      }
+      "checks": [
+        {
+          "script": "/bin/check_redis -p 7000",
+          "interval": "30s",
+          "ttl": "60s"
+        }
+      ]
     },
     ...
   ]

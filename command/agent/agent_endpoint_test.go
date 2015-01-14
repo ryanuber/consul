@@ -429,6 +429,14 @@ func TestHTTPAgentRegisterService(t *testing.T) {
 		Check: CheckType{
 			TTL: 15 * time.Second,
 		},
+		Checks: CheckTypes{
+			&CheckType{
+				TTL: 20 * time.Second,
+			},
+			&CheckType{
+				TTL: 30 * time.Second,
+			},
+		},
 	}
 	req.Body = encodeReq(args)
 
@@ -446,12 +454,13 @@ func TestHTTPAgentRegisterService(t *testing.T) {
 	}
 
 	// Ensure we have a check mapping
-	if _, ok := srv.agent.state.Checks()["service:test"]; !ok {
-		t.Fatalf("missing test check")
+	checks := srv.agent.state.Checks()
+	if len(checks) != 3 {
+		t.Fatalf("bad: %v", checks)
 	}
 
-	if _, ok := srv.agent.checkTTLs["service:test"]; !ok {
-		t.Fatalf("missing test check ttl")
+	if len(srv.agent.checkTTLs) != 3 {
+		t.Fatalf("missing test check ttls: %v", srv.agent.checkTTLs)
 	}
 }
 

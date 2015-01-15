@@ -1024,7 +1024,7 @@ func (a *Agent) EnableServiceMaintenance(serviceID string) error {
 		ServiceName: service.Service,
 		Status:      structs.HealthCritical,
 	}
-	a.state.AddCheck(check)
+	a.AddCheck(check, nil, true)
 
 	return nil
 }
@@ -1054,7 +1054,7 @@ func (a *Agent) DisableServiceMaintenance(serviceID string) error {
 
 DEREGISTER:
 	// Deregister the maintenance check
-	a.state.RemoveCheck(maintCheckID)
+	a.RemoveCheck(maintCheckID, true)
 
 	return nil
 }

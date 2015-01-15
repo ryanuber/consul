@@ -22,6 +22,9 @@ const (
 
 	// Path to save local agent checks
 	checksDir = "checks"
+
+	// The ID of the faux health check for maintenance mode
+	maintCheckID = "_maintenance_"
 )
 
 /*
@@ -985,6 +988,69 @@ func (a *Agent) unloadChecks() error {
 			return fmt.Errorf("Failed deregistering check '%s': %s", check.CheckID, err)
 		}
 	}
+
+	return nil
+}
+
+func (a *Agent) EnableServiceMaintenance(serviceID string) error {
+	var service *structs.NodeService
+	for _, svc := range a.state.Services() {
+		if svc.ID == serviceID {
+			service = svc
+		}
+	}
+
+	// Ensure the service exists
+	if service == nil {
+		return fmt.Errorf("No service registered with ID %q", serviceID)
+	}
+
+	// Ensure maintenance mode is not already enabled
+	for _, check := range a.state.Checks() {
+		if check.CheckID == maintCheckID {
+			return fmt.Errorf("Maintenance mode already enabled for service %q", serviceID)
+		}
+	}
+
+	// Create and register the critical health check
+	check := &structs.HealthCheck{
+		Node:        a.config.NodeName,
+		CheckID:     maintCheckID,
+		Name:        "Service Maintenance Mode",
+		Notes:       "Maintenance mode is enabled for this service",
+		ServiceID:   service.ID,
+		ServiceName: service.Service,
+		Status:      structs.HealthCritical,
+	}
+	a.state.AddCheck(check)
+
+	return nil
+}
+
+func (a *Agent) DisableServiceMaintenance(serviceID string) error {
+	var service *structs.NodeService
+	for _, svc := range a.state.Services() {
+		if svc.ID == serviceID {
+			service = svc
+		}
+	}
+
+	// Ensure the service exists
+	if service == nil {
+		return fmt.Errorf("No service registered with ID %q", serviceID)
+	}
+
+	// Ensure maintenance mode is enabled
+	for _, check := range a.state.Checks() {
+		if check.CheckID == maintCheckID {
+			goto DEREGISTER
+		}
+	}
+	return fmt.Errorf("Maintenance mode not enabled for service %q", serviceID)
+
+DEREGISTER:
+	// Deregister the maintenance check
+	a.state.RemoveCheck(maintCheckID)
 
 	return nil
 }

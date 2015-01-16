@@ -7,7 +7,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -141,21 +140,16 @@ func TestAgent_RPCPingUnix(t *testing.T) {
 		t.SkipNow()
 	}
 
-	nextConf := nextConfig()
-
 	tempdir, err := ioutil.TempDir("", "consul-test-")
 	if err != nil {
-		t.Fatal("Could not create a working directory")
+		t.Fatal("err: %s", err)
 	}
+	defer os.RemoveAll(tempdir)
 
-	user, err := user.Current()
-	if err != nil {
-		t.Fatal("Could not get current user")
-	}
+	conf := nextConfig()
+	conf.Addresses.RPC = fmt.Sprintf("unix://%s/test.sock", tempdir)
 
-	nextConf.Addresses.RPC = "unix://" + tempdir + "/unix-rpc-test.sock;" + user.Uid + ";" + user.Gid + ";640"
-
-	dir, agent := makeAgent(t, nextConf)
+	dir, agent := makeAgent(t, conf)
 	defer os.RemoveAll(dir)
 	defer agent.Shutdown()
 
